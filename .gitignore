@@ -1,0 +1,7 @@
+out/
+build-tmp/
+dist/
+*.class
+SpreadsheetPro.jar
+manifest.txt
+.DS_Store
