@@ -7,9 +7,17 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to attach the files to (the release must already exist)'
+        required: true
+        default: 'v1.0'
 
 permissions:
   contents: write
+
+env:
+  TAG: ${{ github.event.release.tag_name || inputs.tag }}
 
 jobs:
   jar:
@@ -32,11 +40,10 @@ jobs:
           name: jar
           path: SpreadsheetPro.jar
       - name: Attach to the release
-        if: github.event_name == 'release'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-        run: gh release upload "${{ github.event.release.tag_name }}" SpreadsheetPro.jar --clobber
+        run: gh release upload "$TAG" SpreadsheetPro.jar --clobber
 
   bundle:
     name: App with Java inside (${{ matrix.label }})
@@ -59,6 +66,7 @@ jobs:
       run:
         shell: bash
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -70,7 +78,6 @@ jobs:
       - name: Work out the version number
         id: ver
         run: |
-          TAG="${{ github.event.release.tag_name }}"
           V="${TAG#v}"
           if ! [[ "$V" =~ ^[0-9]+(\.[0-9]+){0,2}$ ]]; then V="1.0.0"; fi
           echo "version=$V" >> "$GITHUB_OUTPUT"
@@ -98,8 +105,7 @@ jobs:
           name: ${{ matrix.asset }}
           path: ${{ env.FILE }}
       - name: Attach to the release
-        if: github.event_name == 'release'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-        run: gh release upload "${{ github.event.release.tag_name }}" "$FILE" --clobber
+        run: gh release upload "$TAG" "$FILE" --clobber
